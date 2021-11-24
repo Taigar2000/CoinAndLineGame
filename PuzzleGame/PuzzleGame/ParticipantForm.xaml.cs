@@ -42,7 +42,9 @@ namespace PuzzleGame
 
             if (nickNameTextBox.Text != "" && numericTextBox.Text != "")
             {
-                Datawriter.DataConsumer(nickNameTextBox.Text, System.DateTime.Now, int.Parse(numericTextBox.Text), 0, gender);
+                DataWriter.deleteFile("../../../../working_result.txt");
+                DataWriter.DataConsumer("Probe_start", System.DateTime.Now, 0,0, nickNameTextBox.Text + "," + int.Parse(numericTextBox.Text) + "," + gender);
+                DataWriter.DataConsumer("Probe_end", System.DateTime.Now, 0,0, nickNameTextBox.Text + "," + int.Parse(numericTextBox.Text) + "," + gender);
                 Content = new ExamplePage(TestingParams);
             }
             else

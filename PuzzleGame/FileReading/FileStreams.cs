@@ -249,5 +249,68 @@ namespace FileReading
             return;
         }
 
+        /// <summary>
+        /// Write lines to file
+        /// </summary>
+        /// <param name="path">Path to file</param>
+        /// <param name="path">Data to writing to file</param>
+        /// <param name="encode">Encoding of file</param>
+        public static void writeToNewFile(string path, string data, Encoding encode = null)
+        {
+            string str = "Problem with writing to file";
+            if (encode == null) { encode = Encoding.Default; }
+
+            try
+            {
+                File.WriteAllText(path, data, encode);
+            }
+            catch (FormatException e)
+            {
+                throw new CSVException(" because you give wrong value of amount in file", e);
+            }
+            catch (ArgumentNullException e)
+            {
+                throw new CSVException(" because you give null or incorrect string instead path", e);
+            }
+            catch (ArgumentException e)
+            {
+                throw new CSVException(str + " because you give path in wrong format", e);
+            }
+            catch (PathTooLongException e)
+            {
+                throw new CSVException(str + " because given path is too long", e);
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                throw new CSVException(str + " because you give path to nonexistent directory", e);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new CSVException(str + " because you give path to nonexistent file", e);
+            }
+            catch (IOException e)
+            {
+                throw new CSVException(str + " because program has error when reading data from file", e);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw new CSVException(str + " because your permissions is insufficient to open this file", e);
+            }
+            catch (NotSupportedException e)
+            {
+                throw new CSVException(str + " because stream does not support invoked functionality", e);
+            }
+            catch (System.Security.SecurityException e)
+            {
+                throw new CSVException(str + " because program take security error", e);
+            }
+            catch (Exception e)
+            {
+                throw new CSVException(str + "Unknown exception", e);
+            }
+
+            return;
+        }
+
     }
 }

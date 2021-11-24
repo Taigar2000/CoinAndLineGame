@@ -43,7 +43,7 @@ namespace PuzzleGame
             puzzles[curPuzzle].Render(canvas, 20, 40);
 
             timer.Start();
-            Datawriter.DataConsumer("Probe_start", System.DateTime.Now, 0, 0, "");
+            DataWriter.DataConsumer("Probe_start", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft + 1) + " start");
         }
 
         private void GameTick(object sender, EventArgs e)
@@ -58,6 +58,7 @@ namespace PuzzleGame
                 timeLeft.Text = "0";
                 timer.Stop();
                 MessageBox.Show("Время на решения головоломки истекло", "Увы...", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                DataWriter.DataConsumer("Probe_end", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft + 1) + " end");
                 NextPuzzle();
             }
         }
@@ -66,17 +67,22 @@ namespace PuzzleGame
         {
             if (--puzzles[curPuzzle].AttemptsLeft > 0)
             {
+                DataWriter.DataConsumer("Probe_end", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft) + " end");
+                DataWriter.DataConsumer("Probe_start", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft + 1) + " start");
                 puzzles[curPuzzle].MatchesToMoveLeft = puzzles[curPuzzle].MatchesToMove;
                 numAttemptsLeft.Text = puzzles[curPuzzle].AttemptsLeft.ToString();
                 movesLeft.Text = puzzles[curPuzzle].MatchesToMove.ToString();
                 canvas.Children.Clear();
                 puzzles[curPuzzle].RenderSlots(canvas, 20, 40, TestingParams.AreSlotsVisible);
                 puzzles[curPuzzle].Render(canvas, 20, 40);
+                if(puzzles[curPuzzle].AttemptsLeft == 1)
+                {
+                    newAttempt.IsEnabled = false;
+                }
             }
             else
             {
                 numAttemptsLeft.Text = "0";
-                newAttempt.IsEnabled = false;
             }
         }
 
@@ -87,8 +93,7 @@ namespace PuzzleGame
 
         private void NextPuzzle()
         {
-            Datawriter.DataConsumer("Probe_end", System.DateTime.Now, 0, 0, "");
-
+            DataWriter.DataConsumer("Probe_end", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft + 1) + " end");
             timer.Stop();
             if (TestingParams.IsFeedbackNeeded && timeLeft.Text != "0")
             {
@@ -106,7 +111,7 @@ namespace PuzzleGame
                 puzzles[curPuzzle].RenderSlots(canvas, 20, 40, TestingParams.AreSlotsVisible);
                 puzzles[curPuzzle].Render(canvas, 20, 40); 
                 timer.Start();
-                Datawriter.DataConsumer("Probe_start", System.DateTime.Now, 0, 0, "");
+                DataWriter.DataConsumer("Probe_start", System.DateTime.Now, 0, 0, "" + curPuzzle + " Attemp " + (TestingParams.NumAttempts - puzzles[curPuzzle].AttemptsLeft + 1) + " start");
             }
             else
             {

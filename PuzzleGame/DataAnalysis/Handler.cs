@@ -4,13 +4,13 @@ using System.Collections.Generic;
 
 namespace DataAnalysis
 {
-    public class Datawriter
+    public class DataWriter
     {
         public delegate void DataConsumerDelegate(string type, DateTime time, int x, int y, string obj);
 
         public static DataConsumerDelegate dataDel;
 
-        static Datawriter()
+        static DataWriter()
         {
             dataDel = DataConsumer;
         }
@@ -19,11 +19,38 @@ namespace DataAnalysis
         {
             FileStreams.writeToFile("../../../../working_result.txt", "" + type + ":" + ((DateTimeOffset)time).ToUnixTimeMilliseconds() + ":" + x + ":" + y + ":" + obj + "\n");
         }
+
+        public static void deleteFile(string path)
+        {
+            FileStreams.writeToNewFile(path, "");
+        }
+
+
+
+        public static void AnalizeAndWrite(string s = "../../../../working_result.txt", string sr = "../../../../result.csv", string sep = ";")
+        {
+            List<DataReader.Probe> probes = DataReader.ReadAndParse(s);
+            long timetotal = 0;
+            for (int i = 0; i < probes.Count; ++i)
+            {
+                //Console.WriteLine("Test number " + i + "\n" + probes[i].ToString() + "\n\n");
+                if (i == 0)
+                {
+                    FileReading.FileStreams.writeToFile(sr, "" + probes[i].ToStringCSV(true, sep: sep) + "\n");
+                }
+                else
+                {
+                    FileReading.FileStreams.writeToFile(sr, "" + (i) + sep + probes[i].ToStringCSV(sep: sep) + "\n");
+                    timetotal += probes[i].totaltime;
+                }
+            }
+            FileReading.FileStreams.writeToFile(sr, "" + "Total time:" + sep + timetotal + "\n");
+        }
     }
 
     public class DataReader
     {
-        enum EventTypes
+        public enum EventTypes
         {
             Probe_start, // start of probe
             Probe_end, // end of probe
@@ -32,7 +59,7 @@ namespace DataAnalysis
             Object_get, // user take object(start moving)
             Object_loose // user release object (end moving, start pause)
         }
-        class EventData
+        public class EventData
         {
             public EventTypes type;
             public long time;
@@ -139,9 +166,18 @@ namespace DataAnalysis
             }
 
 
-            public string ToStringCSV()
+            public string ToStringCSV(bool f = false, string sep = ",")
             {
-                string s = "" + name_attemp + ",";
+                string s = "";
+                if (f)
+                {
+                    foreach(var i in name_attemp.Split(","))
+                    {
+                        s += i + sep;
+                    }
+                    return "\n\n" + s;
+                }
+                s = "" + name_attemp + sep;
                 long lsum = 0;
                 int isum = 0;
                 //s += "Pauses: \n";
@@ -151,7 +187,7 @@ namespace DataAnalysis
                     //s += "" + i + ", ";
                 }
                 //s += "\nTotal Sum: " + lsum + "\n";
-                s += "" + lsum + ",";
+                s += "" + lsum + sep;
                 lsum = 0;
                 //s += "Moves: \n";
                 foreach (long i in moves)
@@ -160,8 +196,8 @@ namespace DataAnalysis
                     //s += "" + i + ", ";
                 }
                 //s += "\nTotal Sum: " + lsum + "\n";
-                s += "" + lsum + ",";
-                s += "" + pauses.Count + "," + moves.Count + ",";
+                s += "" + lsum + sep;
+                s += "" + pauses.Count + sep + moves.Count + sep;
                 //s += "returnes for each object: \n";
                 List<MovableObject> valList = new List<MovableObject>(obj.Values);
                 valList.Sort((a, b) => { return a.name.CompareTo(b.name); });
@@ -169,19 +205,19 @@ namespace DataAnalysis
                 foreach (MovableObject i in valList)
                 {
                     //s += "\t" + i.name + ": " + i.ret_to_start_pos + "\n";
-                    //s += "" + i.name + ": " + i.ret_to_start_pos + ",";
+                    //s += "" + i.name + ": " + i.ret_to_start_pos + sep;
                     isum += i.ret_to_start_pos;
                     ids += "" + i.name;
                 }
                 //s += "Total Sum: " + isum + "\n";
-                s += "" + isum + ",";
-                s += "" + pauses[0] + ",";
+                s += "" + isum + sep;
+                s += "" + pauses[0] + sep;
                 var lenum = obj.Values.GetEnumerator();
                 if (lenum.MoveNext()) {
-                    s += "" + lenum.Current.name + ",";
+                    s += "" + lenum.Current.name + sep;
                 }
-                s += ids + ",";
-                s += "" + totaltime + ",";
+                s += ids + sep;
+                s += "" + totaltime + sep;
 
                 return s;
 
@@ -210,14 +246,16 @@ namespace DataAnalysis
             Dictionary<string, MovableObject> objlist = new Dictionary<string, MovableObject>();
             try
             {
+                int linei = 0;
                 foreach (string s in FileStreams.readFileAllLines(path))
                 {
+                    ++linei;
                     string[] res = s.Split(':');
                     if (res[0] == "Probe_start")
                     {
                         if (history.Count != 0 && history[history.Count - 1].type != EventTypes.Probe_end)
                         {
-                            throw new FormatException("Broken data!");
+                            throw new FormatException("Broken data! " + linei);
                         }
                         history.Add(new EventData(EventTypes.Probe_start, res[1], res[2], res[3], res[4]));
                         continue;
@@ -259,17 +297,19 @@ namespace DataAnalysis
                         }
                         else
                         {
-                            throw new FormatException("Broken data!");
+                            throw new FormatException("Broken data! " + linei);
                         }
                     }
                     // Other cathchers dont realized, because for this task they are not needed (front does not working yet).
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new FormatException("Broken data!", e);
             }
 
+            return ParseReaded(history, objlist);
+        }
             /*
 
 1) Продолжительность пауз между передвижением монеток/спичек в мс
@@ -286,7 +326,7 @@ namespace DataAnalysis
 
             */
 
-
+        public static List<Probe> ParseReaded(List<EventData> history, Dictionary<string, MovableObject> objlist) { 
             List<Probe> probes = new List<Probe>();
 
             for(int i = 0; i < history.Count; ++i)

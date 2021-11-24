@@ -1,4 +1,5 @@
 ﻿using System.Windows.Controls;
+using DataAnalysis;
 
 
 namespace PuzzleGame
@@ -11,6 +12,7 @@ namespace PuzzleGame
         public FinalWindow()
         {
             InitializeComponent();
+            DataAnalysis.DataWriter.AnalizeAndWrite();
         }
     }
 }
